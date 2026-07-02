@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="sr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Planine i reke na mapi</title>
+    <meta name="theme-color" content="#f8faf8" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Navigacija" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icon-192.png" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="side-panel" aria-label="Detalji mape">
+        <div class="brand-row">
+          <div>
+            <p class="eyebrow">Mapa</p>
+            <h1>Navigacija</h1>
+          </div>
+          <button id="locateBtn" class="icon-button" type="button" title="Prikaži moju lokaciju" aria-label="Prikaži moju lokaciju">
+            ⌖
+          </button>
+        </div>
+
+        <div class="search-group">
+          <label for="searchInput">Pretraga</label>
+          <input id="searchInput" type="search" placeholder="Tara, Drina, Kopaonik..." autocomplete="off" />
+          <div id="searchSuggestions" class="search-suggestions" role="listbox"></div>
+        </div>
+
+        <section class="route-panel" aria-label="Planiranje rute">
+          <div class="section-header">
+            <h2>Ruta</h2>
+            <button id="clearRouteBtn" class="text-button" type="button">Obriši</button>
+          </div>
+          <div class="address-route">
+            <label for="routeAddressInput">Adresa ili mesto</label>
+            <input id="routeAddressInput" type="search" placeholder="npr. Kraljevo, Studenica, Avala..." autocomplete="off" />
+            <div id="routeAddressSuggestions" class="search-suggestions route-address-suggestions" role="listbox"></div>
+            <div class="address-actions">
+              <button id="addressStartBtn" class="route-button" type="button">Start</button>
+              <button id="addressWaypointBtn" class="route-button" type="button">Usput</button>
+              <button id="addressEndBtn" class="route-button" type="button">Cilj</button>
+            </div>
+          </div>
+          <div class="route-grid">
+            <button id="startFromLocationBtn" class="route-button" type="button">Moja lokacija</button>
+            <button id="pickStartBtn" class="route-button" type="button">Start na mapi</button>
+            <button id="pickWaypointBtn" class="route-button" type="button">Tačka usput</button>
+            <button id="pickEndBtn" class="route-button" type="button">Cilj na mapi</button>
+            <button id="routeBtn" class="route-button primary" type="button">Pronađi rutu</button>
+          </div>
+          <div class="route-delete-grid">
+            <button id="deleteStartBtn" class="route-button danger" type="button">Obriši start</button>
+            <button id="deleteWaypointsBtn" class="route-button danger" type="button">Obriši usput</button>
+            <button id="deleteEndBtn" class="route-button danger" type="button">Obriši cilj</button>
+          </div>
+          <div id="waypointsList" class="waypoints-list"></div>
+          <p id="routeStatus" class="route-status">Postavi start i cilj.</p>
+          <div class="route-attractions">
+            <h3>Zanimljivosti usput</h3>
+            <div id="routeAttractionsList" class="route-attractions-list">
+              <p>Pronađi rutu da vidiš mesta usput.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="status-box" aria-live="polite">
+          <span id="visibleCount">0 objekata</span>
+          <small id="viewLabel">u trenutnom prikazu</small>
+        </section>
+
+        <section class="list-section">
+          <div class="section-header">
+            <h2>Vidljivo na mapi</h2>
+            <button id="resetBtn" class="text-button" type="button">Reset</button>
+          </div>
+          <div id="featureList" class="feature-list"></div>
+        </section>
+      </aside>
+
+      <section class="map-wrap" aria-label="Interaktivna mapa">
+        <div id="map"></div>
+        <div class="map-legend" aria-label="Legenda">
+          <span>Planine su označene imenima</span>
+          <span>Reke i jezera su označeni imenima</span>
+        </div>
+      </section>
+    </main>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      crossorigin=""
+    ></script>
+    <script src="./places-data.js?v=20260702-all-places"></script>
+    <script src="./app.js?v=20260702-all-places"></script>
+  </body>
+</html>
