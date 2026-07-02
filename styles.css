@@ -698,7 +698,7 @@ h2 {
   }
 
   .brand-row {
-    display: none;
+    display: none !important;
   }
 
   .route-panel {
@@ -741,9 +741,7 @@ h2 {
   }
 
   .map-legend {
-    right: 12px;
-    bottom: 12px;
-    flex-wrap: wrap;
+    display: none;
   }
 
   .route-grid,

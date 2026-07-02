@@ -615,7 +615,11 @@ const routeState = {
   endMarker: null,
   waypoints: [],
   routeLine: null,
+  routePoints: null,
   attractionMarkers: [],
+  vehicleLatLng: null,
+  vehicleMarker: null,
+  watchId: null,
   selectedAddressFeature: null,
   pickMode: null
 };
@@ -839,9 +843,36 @@ function riverCenter(path) {
 }
 
 function featureLatLng(feature) {
+  if (feature.type === "river" && Array.isArray(feature.path)) return riverCenter(feature.path);
   if (!Number.isFinite(feature.lat) || !Number.isFinite(feature.lng)) return null;
   if (feature.type === "mountain" || feature.type === "lake" || feature.type === "settlement" || feature.type === "attraction") return [feature.lat, feature.lng];
-  return riverCenter(feature.path);
+  return null;
+}
+
+function featurePoint(feature) {
+  const latlng = featureLatLng(feature);
+  if (!latlng) return null;
+  return { lat: latlng[0], lng: latlng[1] };
+}
+
+function featureNearPoint(feature, point, radiusMeters) {
+  if (feature.type === "river" && Array.isArray(feature.path)) {
+    return feature.path.some(([lat, lng]) => latLngDistanceMeters({ lat, lng }, point) <= radiusMeters);
+  }
+
+  const featureLocation = featurePoint(feature);
+  return featureLocation ? latLngDistanceMeters(featureLocation, point) <= radiusMeters : false;
+}
+
+function featureNearRoute(feature, routePoints, radiusMeters) {
+  if (!routePoints || routePoints.length < 2) return false;
+
+  if (feature.type === "river" && Array.isArray(feature.path)) {
+    return feature.path.some(([lat, lng]) => distanceFromRouteMeters({ lat, lng }, routePoints) <= radiusMeters);
+  }
+
+  const featureLocation = featurePoint(feature);
+  return featureLocation ? distanceFromRouteMeters(featureLocation, routePoints) <= radiusMeters : false;
 }
 
 function formatDistance(meters) {
@@ -958,8 +989,10 @@ function clearRouteLineAndAttractions() {
     routeLayer.removeLayer(routeState.routeLine);
     routeState.routeLine = null;
   }
+  routeState.routePoints = null;
   attractionLayer.clearLayers();
   routeState.attractionMarkers = [];
+  updateLayers();
   elements.routeAttractionsList.innerHTML = "<p>Pronađi rutu da vidiš mesta usput.</p>";
 }
 
@@ -1083,6 +1116,7 @@ function deleteWaypointPoints() {
   routeState.waypoints.forEach((item) => routeLayer.removeLayer(item.marker));
   routeState.waypoints = [];
   renderWaypointsList();
+  updateLayers();
   clearRouteLineAndAttractions();
   setRouteStatus("Tačke usput su obrisane.");
 }
@@ -1096,11 +1130,13 @@ function clearRoute() {
   routeState.endMarker = null;
   routeState.waypoints = [];
   routeState.routeLine = null;
+  routeState.routePoints = null;
   routeState.attractionMarkers = [];
   routeState.pickMode = null;
   map.getContainer().classList.remove("is-picking-route");
   setRouteStatus("Postavi start i cilj.");
   renderWaypointsList();
+  updateLayers();
   elements.routeAttractionsList.innerHTML = "<p>Pronađi rutu da vidiš mesta usput.</p>";
 }
 
@@ -1128,6 +1164,7 @@ async function calculateRoute() {
     if (!route) throw new Error("route-not-found");
 
     const routePoints = route.geometry.coordinates.map(([lng, lat]) => ({ lat, lng }));
+    routeState.routePoints = routePoints;
     const latLngs = routePoints.map((point) => [point.lat, point.lng]);
     if (routeState.routeLine) routeLayer.removeLayer(routeState.routeLine);
     routeState.routeLine = L.polyline(latLngs, {
@@ -1140,6 +1177,7 @@ async function calculateRoute() {
 
     map.fitBounds(routeState.routeLine.getBounds().pad(0.18));
     renderRouteAttractions(routePoints);
+    updateLayers();
     setRouteStatus(`Ruta: ${formatDistance(route.distance)}, oko ${formatDuration(route.duration)} autom.`);
   } catch (error) {
     setRouteStatus("Ne mogu da izračunam rutu. Proveri internet vezu ili pomeri tačke bliže putevima.");
@@ -1359,24 +1397,62 @@ function settlementSuggestions(rawQuery) {
     .slice(0, 20);
 }
 
-function updateLayers() {
-  const isMobile = window.matchMedia("(max-width: 760px)").matches;
-  const showLabels = !isMobile || map.getZoom() >= 8;
-  if (showLabels) {
-    map.addLayer(mountainLayer);
-    map.addLayer(waterLabelLayer);
-  } else {
-    map.removeLayer(mountainLayer);
-    map.removeLayer(waterLabelLayer);
+function setLayerMarkerVisible(layerGroup, marker, visible) {
+  const isVisible = layerGroup.hasLayer(marker);
+  if (visible && !isVisible) {
+    marker.addTo(layerGroup);
+  } else if (!visible && isVisible) {
+    layerGroup.removeLayer(marker);
   }
+}
+
+function shouldShowGeoLabel(feature) {
+  const isMobile = window.matchMedia("(max-width: 760px)").matches;
+  const hasRoute = Boolean(routeState.routePoints && routeState.routePoints.length);
+  const hasVehicle = Boolean(routeState.vehicleLatLng);
+
+  if (hasVehicle) {
+    return featureNearPoint(feature, routeState.vehicleLatLng, 12000);
+  }
+
+  if (hasRoute) {
+    return featureNearRoute(feature, routeState.routePoints, 22000);
+  }
+
+  return !isMobile || map.getZoom() >= 8;
+}
+
+function updateGeoLabelVisibility() {
+  if (!map.hasLayer(mountainLayer)) map.addLayer(mountainLayer);
+  if (!map.hasLayer(waterLabelLayer)) map.addLayer(waterLabelLayer);
+
+  featureById.forEach((entry) => {
+    const { feature, layer, labelMarker } = entry;
+    if (feature.type === "mountain" && layer) {
+      setLayerMarkerVisible(mountainLayer, layer, shouldShowGeoLabel(feature));
+    }
+    if ((feature.type === "river" || feature.type === "lake") && labelMarker) {
+      setLayerMarkerVisible(waterLabelLayer, labelMarker, shouldShowGeoLabel(feature));
+    }
+  });
+}
+
+function updateLayers() {
+  updateGeoLabelVisibility();
   renderVisibleList();
+}
+
+function shouldListFeature(entry, hasQuery, bounds) {
+  if (hasQuery) return true;
+  if (["mountain", "river", "lake"].includes(entry.feature.type) && !shouldShowGeoLabel(entry.feature)) return false;
+  return isFeatureVisible(entry, bounds);
 }
 
 function renderVisibleList() {
   const bounds = map.getBounds();
   const hasQuery = Boolean(elements.search.value.trim());
   const visible = activeEntries()
-    .filter((entry) => hasQuery || isFeatureVisible(entry, bounds))
+    .filter((entry) => shouldListFeature(entry, hasQuery, bounds))
     .slice(0, hasQuery ? 25 : window.matchMedia("(max-width: 760px)").matches ? 20 : Infinity);
 
   elements.count.textContent = `${visible.length} ${visible.length === 1 ? "objekat" : "objekata"}`;
@@ -1596,7 +1672,73 @@ elements.reset.addEventListener("click", () => {
   map.setView([44.05, 20.55], 7);
 });
 
+function updateVehiclePosition(position, shouldOpenPopup = false) {
+  const latlng = {
+    lat: position.coords.latitude,
+    lng: position.coords.longitude
+  };
+  routeState.vehicleLatLng = latlng;
+
+  if (routeState.vehicleMarker) {
+    routeState.vehicleMarker.setLatLng(latlng);
+  } else {
+    routeState.vehicleMarker = L.circleMarker(latlng, {
+      radius: 8,
+      color: "#b9572b",
+      weight: 3,
+      fillColor: "#ffffff",
+      fillOpacity: 1
+    })
+      .bindPopup("Tvoja trenutna lokacija")
+      .addTo(map);
+  }
+
+  if (shouldOpenPopup) routeState.vehicleMarker.openPopup();
+  if (map.getZoom() < 12) {
+    map.setView(latlng, 12);
+  } else {
+    map.panTo(latlng, { animate: true });
+  }
+  updateLayers();
+}
+
+function stopVehicleTracking() {
+  if (routeState.watchId !== null) {
+    navigator.geolocation.clearWatch(routeState.watchId);
+    routeState.watchId = null;
+  }
+  routeState.vehicleLatLng = null;
+  setRouteStatus("PraÄ‡enje lokacije je iskljuÄeno.");
+  updateLayers();
+}
+
+function toggleVehicleTracking() {
+  if (!navigator.geolocation) {
+    window.alert("PregledaÄ ne podrÅ¾ava geolokaciju.");
+    return;
+  }
+
+  if (routeState.watchId !== null) {
+    stopVehicleTracking();
+    return;
+  }
+
+  setRouteStatus("PraÄ‡enje lokacije je ukljuÄeno.");
+  navigator.geolocation.getCurrentPosition(
+    (position) => updateVehiclePosition(position, true),
+    () => window.alert("Lokacija nije dostupna ili nije dozvoljena."),
+    { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+  );
+  routeState.watchId = navigator.geolocation.watchPosition(
+    (position) => updateVehiclePosition(position),
+    () => setRouteStatus("Lokacija trenutno nije dostupna."),
+    { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
+  );
+}
+
 elements.locate.addEventListener("click", () => {
+  toggleVehicleTracking();
+  return;
   if (!navigator.geolocation) {
     window.alert("Pregledač ne podržava geolokaciju.");
     return;
@@ -1657,4 +1799,4 @@ elements.startFromLocation.addEventListener("click", () => {
   );
 });
 
-renderVisibleList();
+updateLayers();
