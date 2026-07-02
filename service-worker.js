@@ -6,8 +6,7 @@ const APP_ASSETS = [
   "./app.js",
   "./places-data.js",
   "./manifest.webmanifest",
-  "./icon-192.png",
-  "./icon-512.png"
+  "./icon.svg"
 ];
 
 self.addEventListener("install", (event) => {
