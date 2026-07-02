@@ -45,7 +45,10 @@
               <button id="addressEndBtn" class="route-button" type="button">Cilj</button>
             </div>
           </div>
-          <button id="routeBtn" class="route-button primary route-submit" type="button">Pronađi rutu</button>
+          <div class="route-submit-row">
+            <button id="routeBtn" class="route-button primary route-submit" type="button">Pronađi rutu</button>
+            <button id="startNavigationBtn" class="route-button start-navigation" type="button">Kreni</button>
+          </div>
           <details class="route-more">
             <summary>Još opcija</summary>
             <div class="route-grid">
@@ -95,6 +98,10 @@
 
       <section class="map-wrap" aria-label="Interaktivna mapa">
         <div id="map"></div>
+        <div class="navigation-hud" aria-live="polite">
+          <span id="navigationStatus">Praćenje rute</span>
+          <button id="stopNavigationBtn" class="text-button" type="button">Izlaz</button>
+        </div>
         <div class="map-legend" aria-label="Legenda">
           <span>Planine su označene imenima</span>
           <span>Reke i jezera su označeni imenima</span>
@@ -107,6 +114,6 @@
       crossorigin=""
     ></script>
     <script src="./places-data.js?v=20260702-mobile-clean"></script>
-    <script src="./app.js?v=20260702-route-context"></script>
+    <script src="./app.js?v=20260702-navigation-mode"></script>
   </body>
 </html>

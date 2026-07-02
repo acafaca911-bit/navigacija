@@ -1,4 +1,4 @@
-const CACHE_NAME = "navigacija-pwa-v6-route-context";
+const CACHE_NAME = "navigacija-pwa-v7-navigation-mode";
 const APP_ASSETS = [
   "./",
   "./index.html",

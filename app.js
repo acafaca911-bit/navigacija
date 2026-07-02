@@ -588,6 +588,7 @@ const elements = {
   search: document.querySelector("#searchInput"),
   searchSuggestions: document.querySelector("#searchSuggestions"),
   locate: document.querySelector("#locateBtn"),
+  mapWrap: document.querySelector(".map-wrap"),
   reset: document.querySelector("#resetBtn"),
   routeAddress: document.querySelector("#routeAddressInput"),
   routeAddressSuggestions: document.querySelector("#routeAddressSuggestions"),
@@ -602,6 +603,9 @@ const elements = {
   deleteWaypoints: document.querySelector("#deleteWaypointsBtn"),
   deleteEnd: document.querySelector("#deleteEndBtn"),
   route: document.querySelector("#routeBtn"),
+  startNavigation: document.querySelector("#startNavigationBtn"),
+  stopNavigation: document.querySelector("#stopNavigationBtn"),
+  navigationStatus: document.querySelector("#navigationStatus"),
   clearRoute: document.querySelector("#clearRouteBtn"),
   routeStatus: document.querySelector("#routeStatus"),
   waypointsList: document.querySelector("#waypointsList"),
@@ -620,6 +624,7 @@ const routeState = {
   vehicleLatLng: null,
   vehicleMarker: null,
   watchId: null,
+  isNavigating: false,
   selectedAddressFeature: null,
   pickMode: null
 };
@@ -971,6 +976,7 @@ function renderRouteAttractions(routePoints) {
 
 function setRouteStatus(message) {
   elements.routeStatus.textContent = message;
+  if (elements.navigationStatus) elements.navigationStatus.textContent = message;
 }
 
 function setPickMode(mode) {
@@ -1122,6 +1128,7 @@ function deleteWaypointPoints() {
 }
 
 function clearRoute() {
+  stopNavigationMode();
   routeLayer.clearLayers();
   attractionLayer.clearLayers();
   routeState.start = null;
@@ -1693,9 +1700,10 @@ function updateVehiclePosition(position, shouldOpenPopup = false) {
       .addTo(map);
   }
 
-  if (shouldOpenPopup) routeState.vehicleMarker.openPopup();
-  if (map.getZoom() < 12) {
-    map.setView(latlng, 12);
+  if (shouldOpenPopup && !routeState.isNavigating) routeState.vehicleMarker.openPopup();
+  const targetZoom = routeState.isNavigating ? 16 : 12;
+  if (map.getZoom() < targetZoom || routeState.isNavigating) {
+    map.setView(latlng, targetZoom, { animate: true });
   } else {
     map.panTo(latlng, { animate: true });
   }
@@ -1708,6 +1716,7 @@ function stopVehicleTracking() {
     routeState.watchId = null;
   }
   routeState.vehicleLatLng = null;
+  if (routeState.isNavigating) stopNavigationMode();
   setRouteStatus("PraÄ‡enje lokacije je iskljuÄeno.");
   updateLayers();
 }
@@ -1734,6 +1743,50 @@ function toggleVehicleTracking() {
     () => setRouteStatus("Lokacija trenutno nije dostupna."),
     { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 }
   );
+}
+
+function startNavigationMode() {
+  if (!routeState.routePoints || routeState.routePoints.length < 2) {
+    setRouteStatus("Prvo pronaÄ‘i rutu, pa pritisni Kreni.");
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    window.alert("PregledaÄ ne podrÅ¾ava geolokaciju.");
+    setRouteStatus("Za navigaciju je potrebna lokacija.");
+    return;
+  }
+
+  routeState.isNavigating = true;
+  document.body.classList.add("is-navigating");
+  if (elements.mapWrap.requestFullscreen && !document.fullscreenElement) {
+    elements.mapWrap.requestFullscreen().catch(() => {});
+  }
+  window.setTimeout(() => {
+    map.invalidateSize();
+    if (routeState.vehicleLatLng) {
+      map.setView(routeState.vehicleLatLng, 16);
+    } else if (routeState.routeLine) {
+      map.fitBounds(routeState.routeLine.getBounds().pad(0.08));
+    }
+  }, 80);
+
+  if (routeState.watchId === null) toggleVehicleTracking();
+  setRouteStatus("Navigacija je ukljuÄena.");
+}
+
+function stopNavigationMode() {
+  if (!routeState.isNavigating) return;
+  routeState.isNavigating = false;
+  document.body.classList.remove("is-navigating");
+  if (document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen().catch(() => {});
+  }
+  window.setTimeout(() => {
+    map.invalidateSize();
+    if (routeState.routeLine) map.fitBounds(routeState.routeLine.getBounds().pad(0.18));
+  }, 80);
+  setRouteStatus("Navigacija je iskljuÄena.");
 }
 
 elements.locate.addEventListener("click", () => {
@@ -1770,6 +1823,8 @@ elements.deleteWaypoints.addEventListener("click", deleteWaypointPoints);
 elements.deleteEnd.addEventListener("click", deleteEndPoint);
 elements.clearRoute.addEventListener("click", clearRoute);
 elements.route.addEventListener("click", calculateRoute);
+elements.startNavigation.addEventListener("click", startNavigationMode);
+elements.stopNavigation.addEventListener("click", stopNavigationMode);
 elements.addressStart.addEventListener("click", () => setAddressAsRoutePoint("start"));
 elements.addressWaypoint.addEventListener("click", () => setAddressAsRoutePoint("waypoint"));
 elements.addressEnd.addEventListener("click", () => setAddressAsRoutePoint("end"));

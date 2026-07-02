@@ -287,6 +287,23 @@ h2 {
   font-size: 1rem;
 }
 
+.route-submit-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(86px, 0.35fr);
+  gap: 8px;
+}
+
+.start-navigation {
+  border-color: #2f7f62;
+  background: #2f7f62;
+  color: #fff;
+}
+
+.start-navigation:hover {
+  border-color: #24664f;
+  background: #276f55;
+}
+
 .route-more {
   display: grid;
   gap: 8px;
@@ -559,6 +576,55 @@ h2 {
   gap: 7px;
 }
 
+.navigation-hud {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: min(520px, calc(100% - 24px));
+  min-height: 52px;
+  padding: 8px 10px 8px 14px;
+  border: 1px solid rgba(23, 33, 38, 0.15);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 30px rgba(23, 33, 38, 0.18);
+  color: var(--ink);
+  font-weight: 850;
+  transform: translateX(-50%);
+  z-index: 700;
+}
+
+body.is-navigating {
+  overflow: hidden;
+}
+
+body.is-navigating .app-shell {
+  display: block;
+  height: 100dvh;
+  min-height: 0;
+}
+
+body.is-navigating .side-panel {
+  display: none;
+}
+
+body.is-navigating .map-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+body.is-navigating .navigation-hud {
+  display: flex;
+}
+
+body.is-navigating .map-legend {
+  display: none;
+}
+
 .mountain-name-marker {
   width: auto !important;
   height: auto !important;
@@ -729,10 +795,16 @@ h2 {
   }
 
   .route-submit {
+    min-height: 52px;
+  }
+
+  .route-submit-row {
     position: sticky;
     bottom: 0;
     z-index: 700;
-    min-height: 52px;
+    grid-template-columns: minmax(0, 1fr) minmax(82px, 0.4fr);
+    padding-top: 2px;
+    background: #ffffff;
     box-shadow: 0 -8px 18px rgba(248, 250, 248, 0.95);
   }
 
