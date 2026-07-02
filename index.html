@@ -51,18 +51,21 @@
               <button id="addressEndBtn" class="route-button" type="button">Cilj</button>
             </div>
           </div>
-          <div class="route-grid">
-            <button id="startFromLocationBtn" class="route-button" type="button">Moja lokacija</button>
-            <button id="pickStartBtn" class="route-button" type="button">Start na mapi</button>
-            <button id="pickWaypointBtn" class="route-button" type="button">Tačka usput</button>
-            <button id="pickEndBtn" class="route-button" type="button">Cilj na mapi</button>
-            <button id="routeBtn" class="route-button primary" type="button">Pronađi rutu</button>
-          </div>
-          <div class="route-delete-grid">
-            <button id="deleteStartBtn" class="route-button danger" type="button">Obriši start</button>
-            <button id="deleteWaypointsBtn" class="route-button danger" type="button">Obriši usput</button>
-            <button id="deleteEndBtn" class="route-button danger" type="button">Obriši cilj</button>
-          </div>
+          <button id="routeBtn" class="route-button primary route-submit" type="button">Pronađi rutu</button>
+          <details class="route-more">
+            <summary>Još opcija</summary>
+            <div class="route-grid">
+              <button id="startFromLocationBtn" class="route-button" type="button">Moja lokacija</button>
+              <button id="pickStartBtn" class="route-button" type="button">Start na mapi</button>
+              <button id="pickWaypointBtn" class="route-button" type="button">Tačka usput</button>
+              <button id="pickEndBtn" class="route-button" type="button">Cilj na mapi</button>
+            </div>
+            <div class="route-delete-grid">
+              <button id="deleteStartBtn" class="route-button danger" type="button">Obriši start</button>
+              <button id="deleteWaypointsBtn" class="route-button danger" type="button">Obriši usput</button>
+              <button id="deleteEndBtn" class="route-button danger" type="button">Obriši cilj</button>
+            </div>
+          </details>
           <div id="waypointsList" class="waypoints-list"></div>
           <p id="routeStatus" class="route-status">Postavi start i cilj.</p>
           <div class="route-attractions">
@@ -100,7 +103,7 @@
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       crossorigin=""
     ></script>
-    <script src="./places-data.js?v=20260702-github-pages"></script>
-    <script src="./app.js?v=20260702-github-pages"></script>
+    <script src="./places-data.js?v=20260702-mobile-route-ui"></script>
+    <script src="./app.js?v=20260702-mobile-route-ui"></script>
   </body>
 </html>
