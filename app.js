@@ -630,6 +630,7 @@ const remoteSuggestionTimers = {
   search: null,
   address: null
 };
+let searchEntriesCache = null;
 
 function normalize(text) {
   return text
@@ -664,6 +665,11 @@ function localSearchEntries() {
 }
 
 function topSearchEntries() {
+  if (searchEntriesCache) {
+    const remoteEntries = Array.from(remoteSuggestionById.values()).map((feature) => ({ feature }));
+    return [...searchEntriesCache, ...remoteEntries];
+  }
+
   const mapFeatures = Array.from(featureById.values());
   const manualSettlementNames = new Set(settlements.map((item) => normalize(item.name)));
   const settlementEntries = settlements.map((item) => ({
@@ -695,8 +701,9 @@ function topSearchEntries() {
     }
   }));
 
+  searchEntriesCache = [...mapFeatures, ...settlementEntries, ...generatedPlaceEntries, ...attractionEntries];
   const remoteEntries = Array.from(remoteSuggestionById.values()).map((feature) => ({ feature }));
-  return [...mapFeatures, ...settlementEntries, ...generatedPlaceEntries, ...attractionEntries, ...remoteEntries];
+  return [...searchEntriesCache, ...remoteEntries];
 }
 
 function searchEntryById(id) {
@@ -728,7 +735,7 @@ function remoteFeatureFromResult(result) {
 }
 
 async function fetchRemotePlaceSuggestions(query) {
-  if (normalize(query).length < 3) return [];
+  if (normalize(query).length < 4) return [];
   const params = new URLSearchParams({
     format: "jsonv2",
     limit: "12",
@@ -765,9 +772,10 @@ async function updateRemoteSuggestions(source, query) {
 
 function scheduleRemoteSuggestions(source, query) {
   window.clearTimeout(remoteSuggestionTimers[source]);
+  if (normalize(query).length < 4) return;
   remoteSuggestionTimers[source] = window.setTimeout(() => {
     updateRemoteSuggestions(source, query);
-  }, 280);
+  }, 650);
 }
 
 async function geocodeLocation(query) {
@@ -1213,7 +1221,10 @@ function exactSearchEntries(rawQuery) {
 function activeEntries() {
   const query = elements.search.value.trim();
   const entries = query ? topSearchEntries() : Array.from(featureById.values());
+  const normalizedQuery = normalize(query);
+  const queryIsShort = normalizedQuery.length > 0 && normalizedQuery.length < 3;
   const scoredEntries = entries
+    .filter(({ feature }) => !queryIsShort || feature.type === "settlement")
     .map((entry) => ({ ...entry, score: searchScore(entry.feature, query) }))
     .filter(({ feature, score }) => enabledType(feature) && score !== Infinity)
     .sort((a, b) => {
@@ -1228,7 +1239,7 @@ function activeEntries() {
 
   const settlementMatches = scoredEntries.filter((entry) => entry.feature.type === "settlement");
   const otherMatches = scoredEntries.filter((entry) => entry.feature.type !== "settlement");
-  return [...settlementMatches, ...otherMatches];
+  return [...settlementMatches, ...otherMatches].slice(0, 60);
 }
 
 function suggestionNamesForQuery(rawQuery) {
@@ -1278,7 +1289,10 @@ function renderSearchSuggestions() {
 function routeAddressEntries() {
   const query = elements.routeAddress.value.trim();
   if (!query) return [];
+  const normalizedQuery = normalize(query);
+  const queryIsShort = normalizedQuery.length > 0 && normalizedQuery.length < 3;
   return topSearchEntries()
+    .filter(({ feature }) => !queryIsShort || feature.type === "settlement")
     .map((entry) => ({ ...entry, score: searchScore(entry.feature, query) }))
     .filter(({ score }) => score !== Infinity)
     .sort((a, b) => {
@@ -1286,7 +1300,8 @@ function routeAddressEntries() {
       const typeDifference = featureTypeRank(a.feature) - featureTypeRank(b.feature);
       if (typeDifference) return typeDifference;
       return a.feature.name.localeCompare(b.feature.name, "sr-Latn");
-    });
+    })
+    .slice(0, 60);
 }
 
 function renderRouteAddressSuggestions() {
@@ -1345,8 +1360,15 @@ function settlementSuggestions(rawQuery) {
 }
 
 function updateLayers() {
-  map.addLayer(mountainLayer);
-  map.addLayer(waterLabelLayer);
+  const isMobile = window.matchMedia("(max-width: 760px)").matches;
+  const showLabels = !isMobile || map.getZoom() >= 8;
+  if (showLabels) {
+    map.addLayer(mountainLayer);
+    map.addLayer(waterLabelLayer);
+  } else {
+    map.removeLayer(mountainLayer);
+    map.removeLayer(waterLabelLayer);
+  }
   renderVisibleList();
 }
 
@@ -1355,7 +1377,7 @@ function renderVisibleList() {
   const hasQuery = Boolean(elements.search.value.trim());
   const visible = activeEntries()
     .filter((entry) => hasQuery || isFeatureVisible(entry, bounds))
-    .slice(0, hasQuery ? 40 : Infinity);
+    .slice(0, hasQuery ? 25 : window.matchMedia("(max-width: 760px)").matches ? 20 : Infinity);
 
   elements.count.textContent = `${visible.length} ${visible.length === 1 ? "objekat" : "objekata"}`;
   elements.viewLabel.textContent = elements.search.value.trim() ? "u prikazu i pretrazi" : "u trenutnom prikazu";
@@ -1558,7 +1580,7 @@ document.addEventListener("click", (event) => {
   elements.routeAddressSuggestions.classList.remove("is-open");
 });
 
-map.on("moveend zoomend", renderVisibleList);
+map.on("moveend zoomend", updateLayers);
 map.on("click", (event) => {
   if (!routeState.pickMode) return;
   setRoutePoint(routeState.pickMode, event.latlng);

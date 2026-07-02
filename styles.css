@@ -197,6 +197,25 @@ h2 {
   background: #ffffff;
 }
 
+.extra-search-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.extra-search-panel summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 850;
+}
+
+.extra-search-panel[open] summary {
+  margin-bottom: 10px;
+}
+
 .route-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -682,10 +701,6 @@ h2 {
     display: none;
   }
 
-  .search-group {
-    display: none;
-  }
-
   .route-panel {
     gap: 8px;
     padding: 10px;
@@ -740,9 +755,24 @@ h2 {
     margin-bottom: 0;
   }
 
-  .status-box,
-  .list-section {
-    display: none;
+  .extra-search-panel {
+    padding: 10px;
+  }
+
+  .extra-search-panel:not([open]) {
+    padding-bottom: 10px;
+  }
+
+  .extra-search-panel .status-box {
+    padding: 10px;
+  }
+
+  .extra-search-panel .status-box span {
+    font-size: 1rem;
+  }
+
+  .extra-search-panel .list-section {
+    max-height: 220px;
   }
 
   .route-attractions-list {

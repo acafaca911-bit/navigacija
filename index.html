@@ -30,12 +30,6 @@
           </button>
         </div>
 
-        <div class="search-group">
-          <label for="searchInput">Pretraga</label>
-          <input id="searchInput" type="search" placeholder="Tara, Drina, Kopaonik..." autocomplete="off" />
-          <div id="searchSuggestions" class="search-suggestions" role="listbox"></div>
-        </div>
-
         <section class="route-panel" aria-label="Planiranje rute">
           <div class="section-header">
             <h2>Ruta</h2>
@@ -68,26 +62,35 @@
           </details>
           <div id="waypointsList" class="waypoints-list"></div>
           <p id="routeStatus" class="route-status">Postavi start i cilj.</p>
+        </section>
+
+        <details class="extra-search-panel">
+          <summary>Dodatna pretraga</summary>
+          <div class="search-group">
+            <label for="searchInput">Pretraga</label>
+            <input id="searchInput" type="search" placeholder="Tara, Drina, Kopaonik..." autocomplete="off" />
+            <div id="searchSuggestions" class="search-suggestions" role="listbox"></div>
+          </div>
           <div class="route-attractions">
             <h3>Zanimljivosti usput</h3>
             <div id="routeAttractionsList" class="route-attractions-list">
               <p>Pronađi rutu da vidiš mesta usput.</p>
             </div>
           </div>
-        </section>
 
-        <section class="status-box" aria-live="polite">
-          <span id="visibleCount">0 objekata</span>
-          <small id="viewLabel">u trenutnom prikazu</small>
-        </section>
+          <section class="status-box" aria-live="polite">
+            <span id="visibleCount">0 objekata</span>
+            <small id="viewLabel">u trenutnom prikazu</small>
+          </section>
 
-        <section class="list-section">
-          <div class="section-header">
-            <h2>Vidljivo na mapi</h2>
-            <button id="resetBtn" class="text-button" type="button">Reset</button>
-          </div>
-          <div id="featureList" class="feature-list"></div>
-        </section>
+          <section class="list-section">
+            <div class="section-header">
+              <h2>Vidljivo na mapi</h2>
+              <button id="resetBtn" class="text-button" type="button">Reset</button>
+            </div>
+            <div id="featureList" class="feature-list"></div>
+          </section>
+        </details>
       </aside>
 
       <section class="map-wrap" aria-label="Interaktivna mapa">
@@ -103,7 +106,7 @@
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       crossorigin=""
     ></script>
-    <script src="./places-data.js?v=20260702-mobile-route-ui-2"></script>
-    <script src="./app.js?v=20260702-mobile-route-ui-2"></script>
+    <script src="./places-data.js?v=20260702-mobile-performance"></script>
+    <script src="./app.js?v=20260702-mobile-performance"></script>
   </body>
 </html>
